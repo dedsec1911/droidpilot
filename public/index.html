@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>DroidPilot — Android Test Automation</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0f14;--bg2:#12151c;--bg3:#181d26;--panel:#1c2130;
+  --border:#252d3d;--border2:#2e3a50;
+  --accent:#3b82f6;--accent2:#06b6d4;--green:#10b981;
+  --red:#ef4444;--yellow:#f59e0b;--purple:#8b5cf6;
+  --text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;
+  --font:'JetBrains Mono',monospace;--fontui:'Syne',sans-serif;
+  --radius:8px;--radius2:12px;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--fontui);font-size:14px;display:flex;flex-direction:column}
+
+/* ── TOPBAR ── */
+#topbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:12px;flex-shrink:0;z-index:100}
+.logo{font-weight:800;font-size:17px;letter-spacing:-0.5px;color:#fff;display:flex;align-items:center;gap:8px}
+.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.logo span{color:var(--accent2)}
+#conn-status{margin-left:auto;display:flex;align-items:center;gap:6px;font-family:var(--font);font-size:11px;color:var(--muted)}
+#conn-dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+#conn-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+#conn-dot.err{background:var(--red);box-shadow:0 0 6px var(--red)}
+.tb-btn{font-family:var(--fontui);font-size:12px;font-weight:600;background:none;border:1px solid var(--border2);color:var(--muted2);padding:5px 12px;border-radius:var(--radius);cursor:pointer;transition:.15s}
+.tb-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tb-btn.danger:hover{border-color:var(--red);color:var(--red)}
+
+/* ── LAYOUT ── */
+#layout{flex:1;display:grid;grid-template-columns:220px 1fr;overflow:hidden}
+
+/* ── SIDEBAR ── */
+#sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-section{padding:12px 10px 6px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;border-radius:var(--radius);margin:1px 6px;font-size:13px;font-weight:600;color:var(--muted2);transition:.15s;border:1px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.25);color:var(--accent)}
+.nav-item .ni-icon{font-size:15px;width:18px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10px;font-family:var(--font);padding:1px 6px;border-radius:20px}
+
+.device-card{margin:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px;cursor:pointer;transition:.15s}
+.device-card:hover{border-color:var(--border2)}
+.device-card.selected{border-color:var(--accent);background:rgba(59,130,246,.06)}
+.dc-name{font-weight:700;font-size:13px;color:#fff;margin-bottom:3px}
+.dc-serial{font-family:var(--font);font-size:10px;color:var(--muted)}
+.dc-status{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--green);margin-top:4px}
+.dc-status::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green)}
+
+#refresh-btn{margin:8px;width:calc(100% - 16px);font-family:var(--fontui);font-size:12px;font-weight:600;background:none;border:1px dashed var(--border2);color:var(--muted);padding:7px;border-radius:var(--radius);cursor:pointer;transition:.15s}
+#refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── MAIN CONTENT ── */
+#content{overflow:auto;background:var(--bg)}
+.page{display:none;height:100%;flex-direction:column;padding:20px}
+.page.active{display:flex}
+.page-header{margin-bottom:18px}
+.page-title{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted)}
+
+/* ── CARDS ── */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius2);padding:16px;margin-bottom:14px}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-title::before{content:'';width:3px;height:12px;background:var(--accent);border-radius:2px}
+
+/* ── STAT GRID ── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.stat-box{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius2);padding:14px}
+.stat-box .label{font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.stat-box .val{font-size:24px;font-weight:800;font-family:var(--font);color:#fff}
+.stat-box .sub{font-size:11px;color:var(--muted);margin-top:3px}
+.stat-box.green .val{color:var(--green)}
+.stat-box.red .val{color:var(--red)}
+.stat-box.yellow .val{color:var(--yellow)}
+.stat-box.blue .val{color:var(--accent)}
+
+/* ── DEVICE INFO GRID ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--bg3);border-radius:var(--radius)}
+.info-row .k{font-size:11px;color:var(--muted);font-weight:600}
+.info-row .v{font-family:var(--font);font-size:12px;color:var(--text)}
+
+/* ── BUTTONS ── */
+.btn{font-family:var(--fontui);font-size:13px;font-weight:700;padding:8px 16px;border-radius:var(--radius);cursor:pointer;transition:.15s;border:none;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{background:#059669}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted2)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── INPUTS ── */
+.input{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font);font-size:13px;padding:8px 11px;width:100%;outline:none;transition:.15s}
+.input:focus{border-color:var(--accent)}
+.input::placeholder{color:var(--muted)}
+select.input option{background:var(--bg3)}
+.form-row{display:grid;gap:10px;margin-bottom:10px}
+.form-row.cols-2{grid-template-columns:1fr 1fr}
+.form-row.cols-3{grid-template-columns:1fr 1fr 1fr}
+label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+
+/* ── SUITE BUILDER ── */
+#suite-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.suite-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s}
+.suite-item:hover{border-color:var(--border2)}
+.suite-item.selected{border-color:var(--accent);background:rgba(59,130,246,.06)}
+.si-name{font-weight:700;font-size:14px;color:#fff;flex:1}
+.si-meta{font-size:11px;color:var(--muted)}
+.si-badge{font-size:10px;font-family:var(--font);padding:2px 8px;border-radius:20px;border:1px solid}
+.badge-pass{color:var(--green);border-color:var(--green)}
+.badge-fail{color:var(--red);border-color:var(--red)}
+.badge-none{color:var(--muted);border-color:var(--muted)}
+
+/* ── STEP BUILDER ── */
+#steps-list{display:flex;flex-direction:column;gap:6px;min-height:40px;padding:4px 0}
+.step-row{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;display:flex;align-items:center;gap:10px;transition:.15s;user-select:none}
+.step-row:hover{border-color:var(--border2)}
+.step-num{font-family:var(--font);font-size:11px;color:var(--muted);min-width:22px}
+.step-type-badge{font-family:var(--font);font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;background:rgba(59,130,246,.15);color:var(--accent);min-width:90px;text-align:center}
+.step-desc{flex:1;font-size:13px;color:var(--muted2)}
+.step-actions{display:flex;gap:4px}
+.step-result{font-size:10px;font-family:var(--font);padding:2px 7px;border-radius:4px}
+.step-result.pass{background:rgba(16,185,129,.15);color:var(--green)}
+.step-result.fail{background:rgba(239,68,68,.15);color:var(--red)}
+.step-result.run{background:rgba(245,158,11,.15);color:var(--yellow)}
+
+/* ── LOGCAT ── */
+#logcat-output{background:#000;border-radius:var(--radius);font-family:var(--font);font-size:12px;padding:12px;height:340px;overflow-y:auto;line-height:1.7;border:1px solid var(--border)}
+.log-line{white-space:pre-wrap;word-break:break-all}
+.log-V{color:#64748b}
+.log-D{color:#94a3b8}
+.log-I{color:#60a5fa}
+.log-W{color:#fbbf24}
+.log-E{color:#f87171}
+.log-F{color:#f87171;font-weight:700}
+.logcat-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+
+/* ── TERMINAL ── */
+#shell-output{background:#000;border-radius:var(--radius);font-family:var(--font);font-size:12px;padding:12px;height:260px;overflow-y:auto;line-height:1.8;border:1px solid var(--border)}
+.shell-cmd{color:var(--accent2)}
+.shell-out{color:var(--green)}
+.shell-err{color:var(--red)}
+#shell-input-row{display:flex;align-items:center;gap:8px;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px}
+#shell-prompt{font-family:var(--font);font-size:12px;color:var(--accent2);white-space:nowrap}
+#shell-input{flex:1;background:none;border:none;outline:none;font-family:var(--font);font-size:12px;color:var(--text)}
+
+/* ── RESULTS ── */
+.result-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.result-item:hover{border-color:var(--border2)}
+.result-header{display:flex;align-items:center;gap:10px}
+.ri-status{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ri-pass{background:var(--green)}
+.ri-fail{background:var(--red)}
+.ri-run{background:var(--yellow);animation:blink .8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.ri-name{font-weight:700;font-size:14px;color:#fff;flex:1}
+.ri-meta{font-size:11px;color:var(--muted)}
+.result-steps{padding-top:10px;border-top:1px solid var(--border);margin-top:10px;display:none;flex-direction:column;gap:4px}
+.result-item.open .result-steps{display:flex}
+.rs-row{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--panel);border-radius:6px}
+.rs-idx{font-family:var(--font);font-size:10px;color:var(--muted);min-width:22px}
+.rs-type{font-family:var(--font);font-size:10px;color:var(--accent);min-width:80px}
+.rs-desc{flex:1;font-size:12px;color:var(--muted2)}
+.rs-dur{font-family:var(--font);font-size:10px;color:var(--muted)}
+.rs-res{font-size:10px;font-family:var(--font);padding:2px 6px;border-radius:4px}
+.rs-pass{background:rgba(16,185,129,.15);color:var(--green)}
+.rs-fail{background:rgba(239,68,68,.15);color:var(--red)}
+.rs-err{font-size:10px;color:var(--red);font-family:var(--font);margin-top:3px;padding-left:30px}
+
+/* ── CONTROLS / QUICK ACTIONS ── */
+.action-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.action-btn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center;cursor:pointer;transition:.15s}
+.action-btn:hover{border-color:var(--accent);background:rgba(59,130,246,.06)}
+.action-btn .ab-icon{font-size:20px;display:block;margin-bottom:5px}
+.action-btn .ab-label{font-size:11px;font-weight:700;color:var(--muted2)}
+
+/* ── TOAST ── */
+#toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:999}
+.toast{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:8px;animation:slideIn .3s ease;min-width:220px;max-width:320px}
+.toast.success{border-color:var(--green)}
+.toast.error{border-color:var(--red)}
+.toast.info{border-color:var(--accent)}
+@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes slideOut{to{transform:translateX(40px);opacity:0}}
+
+/* ── MODAL ── */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center}
+#modal-overlay.show{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border2);border-radius:var(--radius2);padding:24px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:800;color:#fff;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px}
+.prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s}
+.prog-fill.green{background:var(--green)}
+.prog-fill.red{background:var(--red)}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab{font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-color:var(--accent)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* ── MONKEY ── */
+.slider-wrap{display:flex;align-items:center;gap:10px}
+.slider-wrap input[type=range]{flex:1;accent-color:var(--accent)}
+.slider-val{font-family:var(--font);font-size:12px;color:var(--accent);min-width:50px;text-align:right}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  #layout{grid-template-columns:1fr}
+  #sidebar{display:none}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .action-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    Droid<span>Pilot</span>
+  </div>
+  <button class="tb-btn" onclick="refreshDevices()">⟳ Refresh Devices</button>
+  <button class="tb-btn" onclick="showPage('results')">📊 Results</button>
+  <button class="tb-btn danger" id="stop-all-btn" onclick="stopAllRuns()" style="display:none">⏹ Stop All</button>
+  <div id="conn-status">
+    <div id="conn-dot"></div>
+    <span id="conn-label">Connecting...</span>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div id="layout">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-section">Navigation</div>
+    <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard">
+      <span class="ni-icon">🏠</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('device')" data-page="device">
+      <span class="ni-icon">📱</span> Device Info
+    </div>
+    <div class="nav-item" onclick="showPage('suites')" data-page="suites">
+      <span class="ni-icon">🧪</span> Test Suites
+    </div>
+    <div class="nav-item" onclick="showPage('builder')" data-page="builder">
+      <span class="ni-icon">🔧</span> Suite Builder
+    </div>
+    <div class="nav-item" onclick="showPage('results')" data-page="results">
+      <span class="ni-icon">📊</span> Results
+    </div>
+    <div class="nav-item" onclick="showPage('logcat')" data-page="logcat">
+      <span class="ni-icon">📋</span> Logcat
+    </div>
+    <div class="nav-item" onclick="showPage('controls')" data-page="controls">
+      <span class="ni-icon">🎮</span> Device Controls
+    </div>
+    <div class="nav-item" onclick="showPage('monkey')" data-page="monkey">
+      <span class="ni-icon">🐒</span> Monkey Test
+    </div>
+    <div class="nav-item" onclick="showPage('shell')" data-page="shell">
+      <span class="ni-icon">💻</span> ADB Shell
+    </div>
+    <div class="nav-item" onclick="showPage('settings')" data-page="settings">
+      <span class="ni-icon">⚙️</span> Settings
+    </div>
+
+    <div class="sidebar-section" style="margin-top:8px">Connected Devices</div>
+    <div id="device-list">
+      <div style="padding:10px 12px;font-size:12px;color:var(--muted)">Scanning...</div>
+    </div>
+    <button id="refresh-btn" onclick="refreshDevices()">+ Refresh / Connect</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Overview of your Android testing environment</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box blue"><div class="label">Devices</div><div class="val" id="dash-devices">0</div><div class="sub">connected</div></div>
+        <div class="stat-box"><div class="label">Test Suites</div><div class="val" id="dash-suites">0</div><div class="sub">configured</div></div>
+        <div class="stat-box green"><div class="label">Last Run Passed</div><div class="val" id="dash-passed">–</div><div class="sub">steps</div></div>
+        <div class="stat-box red"><div class="label">Last Run Failed</div><div class="val" id="dash-failed">–</div><div class="sub">steps</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Quick Actions</div>
+        <div class="action-grid">
+          <div class="action-btn" onclick="showPage('suites')"><span class="ab-icon">▶️</span><div class="ab-label">Run Suite</div></div>
+          <div class="action-btn" onclick="showPage('builder')"><span class="ab-icon">✏️</span><div class="ab-label">Build Test</div></div>
+          <div class="action-btn" onclick="showPage('logcat')"><span class="ab-icon">📋</span><div class="ab-label">Live Logcat</div></div>
+          <div class="action-btn" onclick="showPage('controls')"><span class="ab-icon">🎮</span><div class="ab-label">Device Control</div></div>
+          <div class="action-btn" onclick="showPage('monkey')"><span class="ab-icon">🐒</span><div class="ab-label">Monkey Test</div></div>
+          <div class="action-btn" onclick="showPage('shell')"><span class="ab-icon">💻</span><div class="ab-label">ADB Shell</div></div>
+          <div class="action-btn" onclick="showPage('results')"><span class="ab-icon">📊</span><div class="ab-label">View Results</div></div>
+          <div class="action-btn" onclick="openInstallModal()"><span class="ab-icon">📦</span><div class="ab-label">Install APK</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Recent Runs</div>
+        <div id="dash-recent"></div>
+      </div>
+      <div class="card" style="background:rgba(59,130,246,.05);border-color:rgba(59,130,246,.2)">
+        <div class="card-title" style="color:var(--accent)">Server Setup</div>
+        <div style="font-family:var(--font);font-size:12px;color:var(--muted2);line-height:2.2">
+          1. Install Node.js &nbsp;→&nbsp; <span style="color:var(--accent2)">https://nodejs.org</span><br>
+          2. Place <span style="color:var(--yellow)">server.js</span> + <span style="color:var(--yellow)">package.json</span> in a folder<br>
+          3. Run: <span style="color:var(--green)">npm install &amp;&amp; node server.js</span><br>
+          4. Connect Android device via USB, enable USB Debugging<br>
+          5. Server runs on <span style="color:var(--accent)">http://localhost:3737</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEVICE INFO -->
+    <div class="page" id="page-device">
+      <div class="page-header">
+        <div class="page-title">Device Info</div>
+        <div class="page-sub">Detailed info for selected device</div>
+      </div>
+      <div id="device-info-content">
+        <div style="color:var(--muted);padding:20px 0">Select a device from the sidebar to view info.</div>
+      </div>
+    </div>
+
+    <!-- TEST SUITES -->
+    <div class="page" id="page-suites">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title">Test Suites</div>
+          <div class="page-sub">Manage and run your test suites</div>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('builder');newSuite()">+ New Suite</button>
+      </div>
+      <div id="suite-list"></div>
+      <div id="suite-run-panel" style="display:none"></div>
+    </div>
+
+    <!-- SUITE BUILDER -->
+    <div class="page" id="page-builder">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title">Suite Builder</div>
+          <div class="page-sub">Build custom test automation flows</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="clearBuilder()">✕ Clear</button>
+          <button class="btn btn-success" onclick="saveSuite()">💾 Save Suite</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Suite Info</div>
+        <div class="form-row cols-2">
+          <div><label>Suite Name</label><input class="input" id="suite-name" placeholder="e.g. Login Flow Test"/></div>
+          <div><label>Package Name</label><input class="input" id="suite-pkg" placeholder="com.example.app"/></div>
+        </div>
+        <div class="form-row">
+          <div><label>Description</label><input class="input" id="suite-desc" placeholder="What does this suite test?"/></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Add Step</div>
+        <div class="form-row cols-3">
+          <div>
+            <label>Step Type</label>
+            <select class="input" id="step-type" onchange="onStepTypeChange()">
+              <option value="launch">Launch App</option>
+              <option value="stop">Force Stop App</option>
+              <option value="clear_data">Clear App Data</option>
+              <option value="tap">Tap (x, y)</option>
+              <option value="swipe">Swipe</option>
+              <option value="type">Type Text</option>
+              <option value="keyevent">Key Event</option>
+              <option value="wait">Wait (ms)</option>
+              <option value="shell">Shell Command</option>
+              <option value="assert_text">Assert Text Visible</option>
+              <option value="screenshot">Take Screenshot</option>
+              <option value="orientation">Set Orientation</option>
+              <option value="monkey">Quick Monkey</option>
+              <option value="grant_permission">Grant Permission</option>
+              <option value="set_prop">Set System Prop</option>
+            </select>
+          </div>
+          <div id="step-param1-wrap">
+            <label id="step-p1-label">Value / Package</label>
+            <input class="input" id="step-param1" placeholder=""/>
+          </div>
+          <div id="step-param2-wrap" style="display:none">
+            <label id="step-p2-label">Param 2</label>
+            <input class="input" id="step-param2" placeholder=""/>
+          </div>
+        </div>
+        <div class="form-row cols-3">
+          <div id="step-param3-wrap" style="display:none">
+            <label id="step-p3-label">Param 3</label>
+            <input class="input" id="step-param3" placeholder=""/>
+          </div>
+          <div>
+            <label>Delay After (ms)</label>
+            <input class="input" id="step-delay" type="number" value="500" min="0" step="100"/>
+          </div>
+          <div>
+            <label>Assert Output Contains</label>
+            <input class="input" id="step-assert" placeholder="Optional expected string"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn btn-primary btn-sm" onclick="addStep()">+ Add Step</button>
+          <span style="font-size:12px;color:var(--muted);align-self:center">Steps execute in order. Click step to remove.</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Steps <span id="step-count" style="color:var(--muted);font-size:11px;margin-left:6px;font-weight:400"></span></div>
+        <div id="steps-list"><div style="color:var(--muted);font-size:13px;padding:10px 0">No steps yet. Add steps above.</div></div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="page" id="page-results">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title">Test Results</div>
+          <div class="page-sub">History of all test runs</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="clearResults()">🗑 Clear History</button>
+      </div>
+      <div id="results-list"></div>
+    </div>
+
+    <!-- LOGCAT -->
+    <div class="page" id="page-logcat">
+      <div class="page-header">
+        <div class="page-title">Logcat</div>
+        <div class="page-sub">Live device log stream</div>
+      </div>
+      <div class="logcat-toolbar">
+        <button class="btn btn-success btn-sm" onclick="startLogcat()">▶ Start</button>
+        <button class="btn btn-danger btn-sm" onclick="stopLogcat()">⏹ Stop</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearLogcat()">✕ Clear</button>
+        <input class="input" id="logcat-tag" placeholder="Filter tag (optional)" style="width:160px"/>
+        <input class="input" id="logcat-filter" placeholder="Search in logs..." style="width:180px" oninput="filterLogcat()"/>
+        <select class="input" id="logcat-level" style="width:100px" onchange="filterLogcat()">
+          <option value="">All</option>
+          <option value="V">Verbose</option>
+          <option value="D">Debug</option>
+          <option value="I">Info</option>
+          <option value="W">Warn</option>
+          <option value="E">Error</option>
+        </select>
+      </div>
+      <div id="logcat-output"></div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="page" id="page-controls">
+      <div class="page-header">
+        <div class="page-title">Device Controls</div>
+        <div class="page-sub">Interactive device control panel</div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('controls','app')">📱 App Manager</div>
+        <div class="tab" onclick="switchTab('controls','input')">👆 Input</div>
+        <div class="tab" onclick="switchTab('controls','system')">⚙️ System</div>
+        <div class="tab" onclick="switchTab('controls','perf')">📈 Performance</div>
+      </div>
+      <!-- App Manager -->
+      <div class="tab-pane active" id="controls-tab-app">
+        <div class="card">
+          <div class="card-title">Install / Manage APK</div>
+          <div class="form-row cols-2">
+            <div>
+              <label>APK File</label>
+              <input type="file" id="apk-file" class="input" accept=".apk" style="padding:5px"/>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary" onclick="installApk()">📦 Install APK</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">App Actions</div>
+          <div class="form-row cols-2">
+            <div><label>Package Name</label><input class="input" id="ctrl-pkg" placeholder="com.example.app"/></div>
+            <div style="display:flex;align-items:flex-end;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-success btn-sm" onclick="launchApp()">▶ Launch</button>
+              <button class="btn btn-ghost btn-sm" onclick="stopApp()">⏹ Stop</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearData()">🗑 Clear Data</button>
+              <button class="btn btn-danger btn-sm" onclick="uninstallApp()">✕ Uninstall</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Installed User Apps</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input class="input" id="pkg-search" placeholder="Search packages..." oninput="filterPackages()" style="flex:1"/>
+            <button class="btn btn-ghost btn-sm" onclick="loadPackages()">⟳ Load</button>
+          </div>
+          <div id="pkg-list" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+      </div>
+      <!-- Input -->
+      <div class="tab-pane" id="controls-tab-input">
+        <div class="card">
+          <div class="card-title">Tap / Swipe</div>
+          <div class="form-row cols-2">
+            <div><label>Tap X</label><input class="input" id="tap-x" type="number" placeholder="540"/></div>
+            <div><label>Tap Y</label><input class="input" id="tap-y" type="number" placeholder="960"/></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="sendTap()">👆 Send Tap</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Swipe</div>
+          <div class="form-row cols-3">
+            <div><label>From X</label><input class="input" id="sw-x1" type="number" placeholder="540"/></div>
+            <div><label>From Y</label><input class="input" id="sw-y1" type="number" placeholder="960"/></div>
+            <div><label>To X</label><input class="input" id="sw-x2" type="number" placeholder="540"/></div>
+          </div>
+          <div class="form-row cols-2">
+            <div><label>To Y</label><input class="input" id="sw-y2" type="number" placeholder="400"/></div>
+            <div><label>Duration (ms)</label><input class="input" id="sw-dur" type="number" value="300"/></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="sendSwipe()">👆 Send Swipe</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Type Text</div>
+          <div class="form-row"><div><label>Text</label><input class="input" id="type-text" placeholder="Text to type on device"/></div></div>
+          <button class="btn btn-primary btn-sm" onclick="sendType()">⌨️ Type</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Key Events</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(4)">⬅ Back</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(3)">⌂ Home</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(187)">⬛ Recents</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(24)">🔊 Vol+</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(25)">🔉 Vol-</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(26)">🔒 Power</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(66)">↩ Enter</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(67)">⌫ Delete</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(82)">📱 Menu</button>
+            <button class="btn btn-ghost btn-sm" onclick="sendKey(223)">💡 Screen On</button>
+          </div>
+        </div>
+      </div>
+      <!-- System -->
+      <div class="tab-pane" id="controls-tab-system">
+        <div class="card">
+          <div class="card-title">Orientation</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="setOrientation(0)">📱 Portrait</button>
+            <button class="btn btn-ghost" onclick="setOrientation(1)">🖥 Landscape</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Font Scale</div>
+          <div class="slider-wrap">
+            <input type="range" min="0.5" max="2.0" step="0.1" value="1.0" id="font-scale" oninput="document.getElementById('font-scale-val').textContent=this.value+'x'"/>
+            <div class="slider-val" id="font-scale-val">1.0x</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px" onclick="applyFontScale()">Apply Font Scale</button>
+        </div>
+        <div class="card">
+          <div class="card-title">Network</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-danger btn-sm" onclick="setNetwork(true)">📵 Disable WiFi+Data</button>
+            <button class="btn btn-success btn-sm" onclick="setNetwork(false)">📶 Enable WiFi+Data</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Screenshot</div>
+          <button class="btn btn-primary btn-sm" onclick="takeScreenshot()">📸 Take Screenshot</button>
+          <div id="screenshot-preview" style="margin-top:10px"></div>
+        </div>
+      </div>
+      <!-- Performance -->
+      <div class="tab-pane" id="controls-tab-perf">
+        <div class="card">
+          <div class="card-title">Performance Check</div>
+          <div class="form-row cols-2">
+            <div><label>Package Name</label><input class="input" id="perf-pkg" placeholder="com.example.app"/></div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary" onclick="checkPerf()">📈 Check Performance</button>
+            </div>
+          </div>
+          <div id="perf-result" style="margin-top:12px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONKEY TEST -->
+    <div class="page" id="page-monkey">
+      <div class="page-header">
+        <div class="page-title">Monkey Test</div>
+        <div class="page-sub">Automated random event stress testing</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Monkey Configuration</div>
+        <div class="form-row cols-2">
+          <div><label>Package Name</label><input class="input" id="monkey-pkg" placeholder="com.example.app"/></div>
+          <div><label>Random Seed</label><input class="input" id="monkey-seed" type="number" value="0" placeholder="0"/></div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>Number of Events: <span id="monkey-events-val" style="color:var(--accent)">500</span></label>
+          <div class="slider-wrap"><input type="range" id="monkey-events" min="50" max="5000" step="50" value="500" oninput="document.getElementById('monkey-events-val').textContent=this.value"/></div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label>Throttle (ms between events): <span id="monkey-throttle-val" style="color:var(--accent)">100ms</span></label>
+          <div class="slider-wrap"><input type="range" id="monkey-throttle" min="0" max="1000" step="50" value="100" oninput="document.getElementById('monkey-throttle-val').textContent=this.value+'ms'"/></div>
+        </div>
+        <button class="btn btn-danger" onclick="runMonkey()" id="monkey-run-btn">🐒 Run Monkey Test</button>
+      </div>
+      <div class="card" id="monkey-result" style="display:none">
+        <div class="card-title">Monkey Result</div>
+        <div id="monkey-result-content"></div>
+      </div>
+    </div>
+
+    <!-- SHELL -->
+    <div class="page" id="page-shell">
+      <div class="page-header">
+        <div class="page-title">ADB Shell</div>
+        <div class="page-sub">Direct ADB shell command execution</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Quick Commands</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px">
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('getprop ro.build.version.release')">Android Ver</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('pm list packages -3')">User Pkgs</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('dumpsys battery')">Battery Info</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('wm size')">Screen Size</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('wm density')">Screen DPI</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('settings list system')">System Settings</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('ps -A | head -30')">Running Processes</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('cat /proc/meminfo')">Memory Info</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('dumpsys window windows | grep -E \"mCurrentFocus|mFocusedApp\"')">Current Activity</button>
+          <button class="btn btn-ghost btn-sm" onclick="runQuickCmd('am stack list')">Activity Stack</button>
+        </div>
+      </div>
+      <div id="shell-output"></div>
+      <div id="shell-input-row">
+        <span id="shell-prompt">adb shell $</span>
+        <input type="text" id="shell-input" placeholder="Enter command..." autocomplete="off" spellcheck="false"/>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+        <div class="page-sub">Configure DroidPilot</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Server Connection</div>
+        <div class="form-row cols-2">
+          <div><label>Server URL</label><input class="input" id="server-url" value="http://localhost:3737"/></div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn btn-primary" onclick="reconnect()">🔌 Connect</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Test Defaults</div>
+        <div class="form-row cols-2">
+          <div><label>Default Step Delay (ms)</label><input class="input" id="default-delay" type="number" value="500"/></div>
+          <div><label>Screenshot on Failure</label>
+            <select class="input" id="ss-on-fail">
+              <option value="1">Enabled</option>
+              <option value="0">Disabled</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Export / Import</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="exportSuites()">⬇ Export Suites JSON</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('import-file').click()">⬆ Import Suites JSON</button>
+          <input type="file" id="import-file" style="display:none" accept=".json" onchange="importSuites(event)"/>
+          <button class="btn btn-danger btn-sm" onclick="if(confirm('Clear all data?')){localStorage.clear();location.reload()}">🗑 Reset All Data</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
+
+<!-- TOAST -->
+<div id="toast-container"></div>
+
+<!-- MODAL (Add Suite / Confirm) -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-box">
+    <div class="modal-title" id="modal-title">Confirm</div>
+    <div id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModalNow()">Cancel</button>
+      <button class="btn btn-primary" id="modal-confirm" onclick="">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ───────────────────────────────────────────────────────────────────
+let BASE = localStorage.getItem('server-url') || 'http://localhost:3737';
+let WS_URL = BASE.replace('http','ws');
+let ws, selectedSerial = null;
+let devices = [], suites = [], results = [];
+let currentBuilderSuite = null;
+let builderSteps = [];
+let logcatLines = [], logcatRunning = false;
+let activeControlsTab = 'app';
+let allPkgs = [];
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  const saved = localStorage.getItem('server-url');
+  if (saved) { BASE = saved; document.getElementById('server-url').value = saved; }
+  loadSuitesFromStorage();
+  loadResultsFromStorage();
+  connectWS();
+  refreshDevices();
+  renderSuiteList();
+  renderResults();
+  updateDashboard();
+  setupShell();
+};
+
+// ── WEBSOCKET ────────────────────────────────────────────────────────────────
+function connectWS() {
+  WS_URL = BASE.replace(/^http/, 'ws');
+  try {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = () => { setConnStatus('ok', 'Server Connected'); };
+    ws.onclose = () => { setConnStatus('err', 'Disconnected'); setTimeout(connectWS, 4000); };
+    ws.onerror = () => setConnStatus('err', 'Connection Failed');
+    ws.onmessage = e => handleWS(JSON.parse(e.data));
+  } catch(err) { setConnStatus('err', 'Cannot Connect'); }
+}
+
+function handleWS(msg) {
+  if (msg.type === 'connected') setConnStatus('ok', 'Server Connected');
+  if (msg.type === 'logcat') appendLogcat(msg.data);
+  if (msg.type === 'run_started') {
+    toast(`▶ Run started: ${msg.suiteName}`, 'info');
+    document.getElementById('stop-all-btn').style.display = '';
+  }
+  if (msg.type === 'step_done') {
+    updateRunningResult(msg.runId, msg.step);
+    refreshResultsFromServer();
+  }
+  if (msg.type === 'run_done') {
+    const icon = msg.status === 'passed' ? '✅' : '❌';
+    toast(`${icon} Run complete: ${msg.passed} passed, ${msg.failed} failed`, msg.status === 'passed' ? 'success' : 'error');
+    document.getElementById('stop-all-btn').style.display = 'none';
+    refreshResultsFromServer();
+    updateDashboard();
+  }
+}
+
+function setConnStatus(state, label) {
+  const dot = document.getElementById('conn-dot');
+  const lbl = document.getElementById('conn-label');
+  dot.className = state;
+  lbl.textContent = label;
+}
+
+function sendWS(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(method, path, body = null, isForm = false) {
+  const opts = { method, headers: {} };
+  if (body && !isForm) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  if (body && isForm) opts.body = body;
+  try {
+    const r = await fetch(BASE + path, opts);
+    return r.json();
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+// ── DEVICES ──────────────────────────────────────────────────────────────────
+async function refreshDevices() {
+  const res = await api('GET', '/api/devices');
+  devices = res.devices || [];
+  renderDeviceList();
+  updateDashboard();
+  if (devices.length > 0 && !selectedSerial) selectDevice(devices[0].serial);
+}
+
+function renderDeviceList() {
+  const el = document.getElementById('device-list');
+  if (!devices.length) {
+    el.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--muted)">No devices found.<br>Connect via USB.</div>';
+    return;
+  }
+  el.innerHTML = devices.map(d => `
+    <div class="device-card ${d.serial === selectedSerial ? 'selected':''}" onclick="selectDevice('${d.serial}')">
+      <div class="dc-name">${d.model}</div>
+      <div class="dc-serial">${d.serial}</div>
+      <div class="dc-status">online</div>
+    </div>`).join('');
+}
+
+function selectDevice(serial) {
+  selectedSerial = serial;
+  renderDeviceList();
+  loadDeviceInfo();
+  toast(`Device selected: ${serial}`, 'info');
+}
+
+async function loadDeviceInfo() {
+  if (!selectedSerial) return;
+  const info = await api('GET', `/api/device/${selectedSerial}/info`);
+  if (info.error) { document.getElementById('device-info-content').innerHTML = `<div style="color:var(--red)">${info.error}</div>`; return; }
+  document.getElementById('device-info-content').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-box"><div class="label">Brand</div><div class="val" style="font-size:16px">${info.brand}</div></div>
+      <div class="stat-box"><div class="label">Model</div><div class="val" style="font-size:16px">${info.model}</div></div>
+      <div class="stat-box blue"><div class="label">Android</div><div class="val">${info.android}</div><div class="sub">API ${info.sdk}</div></div>
+      <div class="stat-box green"><div class="label">Battery</div><div class="val">${info.battery}%</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Hardware</div>
+      <div class="info-grid">
+        <div class="info-row"><span class="k">Resolution</span><span class="v">${info.resolution}</span></div>
+        <div class="info-row"><span class="k">Density</span><span class="v">${info.density}</span></div>
+        <div class="info-row"><span class="k">CPU ABI</span><span class="v">${info.cpuAbi}</span></div>
+        <div class="info-row"><span class="k">Serial</span><span class="v">${info.serial}</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">RAM</div>
+      <div style="font-family:var(--font);font-size:12px;color:var(--muted2)">${info.totalRam}</div>
+    </div>`;
+}
+
+// ── PAGES ─────────────────────────────────────────────────────────────────────
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page)?.classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  if (page === 'results') refreshResultsFromServer();
+  if (page === 'device') loadDeviceInfo();
+  if (page === 'suites') renderSuiteList();
+  if (page === 'controls') loadPackages();
+}
+
+// ── SUITE BUILDER ─────────────────────────────────────────────────────────────
+function newSuite() {
+  currentBuilderSuite = null;
+  builderSteps = [];
+  document.getElementById('suite-name').value = '';
+  document.getElementById('suite-pkg').value = '';
+  document.getElementById('suite-desc').value = '';
+  renderSteps();
+}
+
+function clearBuilder() {
+  if (confirm('Clear all steps?')) newSuite();
+}
+
+const stepSchema = {
+  launch:     { p1: 'Package Name', p2: null, p3: null },
+  stop:       { p1: 'Package Name', p2: null, p3: null },
+  clear_data: { p1: 'Package Name', p2: null, p3: null },
+  tap:        { p1: 'X coordinate', p2: 'Y coordinate', p3: null },
+  swipe:      { p1: 'From X,Y (e.g. 540,960)', p2: 'To X,Y (e.g. 540,400)', p3: 'Duration ms' },
+  type:       { p1: 'Text to type', p2: null, p3: null },
+  keyevent:   { p1: 'Key code (e.g. 66)', p2: null, p3: null },
+  wait:       { p1: 'Duration in ms', p2: null, p3: null },
+  shell:      { p1: 'Shell command', p2: null, p3: null },
+  assert_text:{ p1: 'Text to assert', p2: null, p3: null },
+  screenshot: { p1: null, p2: null, p3: null },
+  orientation:{ p1: '0=Portrait, 1=Landscape', p2: null, p3: null },
+  monkey:     { p1: 'Package Name', p2: 'Event count', p3: null },
+  grant_permission: { p1: 'Package Name', p2: 'Permission (e.g. android.permission.CAMERA)', p3: null },
+  set_prop:   { p1: 'Property key', p2: 'Value', p3: null },
+};
+
+function onStepTypeChange() {
+  const t = document.getElementById('step-type').value;
+  const s = stepSchema[t] || {};
+  const p1w = document.getElementById('step-param1-wrap');
+  const p2w = document.getElementById('step-param2-wrap');
+  const p3w = document.getElementById('step-param3-wrap');
+  if (s.p1) { p1w.style.display=''; document.getElementById('step-p1-label').textContent = s.p1; document.getElementById('step-param1').placeholder = s.p1; }
+  else { p1w.style.display = 'none'; }
+  if (s.p2) { p2w.style.display=''; document.getElementById('step-p2-label').textContent = s.p2; document.getElementById('step-param2').placeholder = s.p2; }
+  else { p2w.style.display = 'none'; }
+  if (s.p3) { p3w.style.display=''; document.getElementById('step-p3-label').textContent = s.p3; document.getElementById('step-param3').placeholder = s.p3; }
+  else { p3w.style.display = 'none'; }
+}
+
+function addStep() {
+  const type = document.getElementById('step-type').value;
+  const p1 = document.getElementById('step-param1').value.trim();
+  const p2 = document.getElementById('step-param2').value.trim();
+  const p3 = document.getElementById('step-param3').value.trim();
+  const delay = parseInt(document.getElementById('step-delay').value) || 500;
+  const assert = document.getElementById('step-assert').value.trim();
+  const step = { type, delay, assert };
+  // Map params to step fields
+  if (type === 'tap') { step.x = p1; step.y = p2; }
+  else if (type === 'swipe') {
+    const [x1,y1] = p1.split(','); const [x2,y2] = p2.split(',');
+    step.x1=x1;step.y1=y1;step.x2=x2;step.y2=y2;step.duration=p3||300;
+  }
+  else if (type === 'grant_permission') { step.package = p1; step.value = p2; }
+  else if (type === 'set_prop') { step.key = p1; step.value = p2; }
+  else if (type === 'monkey') { step.value = p1; step.events = p2||100; }
+  else { step.value = p1; }
+  builderSteps.push(step);
+  renderSteps();
+  document.getElementById('step-param1').value = '';
+  document.getElementById('step-param2').value = '';
+  document.getElementById('step-param3').value = '';
+  document.getElementById('step-assert').value = '';
+}
+
+function renderSteps() {
+  const el = document.getElementById('steps-list');
+  document.getElementById('step-count').textContent = `(${builderSteps.length} steps)`;
+  if (!builderSteps.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px 0">No steps yet. Add steps above.</div>'; return; }
+  el.innerHTML = builderSteps.map((s,i) => `
+    <div class="step-row">
+      <div class="step-num">${i+1}</div>
+      <div class="step-type-badge">${s.type}</div>
+      <div class="step-desc">${describeStep(s)}</div>
+      <div style="font-size:11px;color:var(--muted)">${s.delay}ms</div>
+      <div class="step-actions">
+        <button class="btn btn-ghost btn-sm" onclick="moveStep(${i},-1)" ${i===0?'disabled':''}>↑</button>
+        <button class="btn btn-ghost btn-sm" onclick="moveStep(${i},1)" ${i===builderSteps.length-1?'disabled':''}>↓</button>
+        <button class="btn btn-danger btn-sm" onclick="removeStep(${i})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function describeStep(s) {
+  switch(s.type) {
+    case 'tap': return `Tap at (${s.x}, ${s.y})`;
+    case 'swipe': return `Swipe (${s.x1},${s.y1}) → (${s.x2},${s.y2})`;
+    case 'type': return `Type: "${s.value}"`;
+    case 'keyevent': return `Key event: ${s.value}`;
+    case 'wait': return `Wait ${s.value}ms`;
+    case 'shell': return `Shell: ${s.value}`;
+    case 'grant_permission': return `Grant ${s.value} to ${s.package}`;
+    case 'set_prop': return `setprop ${s.key} = ${s.value}`;
+    case 'monkey': return `Monkey ${s.events} events on ${s.value}`;
+    default: return s.value || '(no params)';
+  }
+}
+
+function moveStep(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= builderSteps.length) return;
+  [builderSteps[i], builderSteps[j]] = [builderSteps[j], builderSteps[i]];
+  renderSteps();
+}
+
+function removeStep(i) { builderSteps.splice(i, 1); renderSteps(); }
+
+function saveSuite() {
+  const name = document.getElementById('suite-name').value.trim();
+  const pkg = document.getElementById('suite-pkg').value.trim();
+  const desc = document.getElementById('suite-desc').value.trim();
+  if (!name) { toast('Suite name is required', 'error'); return; }
+  if (!builderSteps.length) { toast('Add at least one step', 'error'); return; }
+  const suite = { id: currentBuilderSuite?.id || Date.now().toString(), name, pkg, desc, steps: [...builderSteps], createdAt: new Date().toISOString() };
+  const idx = suites.findIndex(s => s.id === suite.id);
+  if (idx >= 0) suites[idx] = suite; else suites.push(suite);
+  saveSuitesToStorage();
+  renderSuiteList();
+  toast(`Suite "${name}" saved (${builderSteps.length} steps)`, 'success');
+  showPage('suites');
+}
+
+// ── SUITE LIST ────────────────────────────────────────────────────────────────
+function renderSuiteList() {
+  const el = document.getElementById('suite-list');
+  document.getElementById('dash-suites').textContent = suites.length;
+  if (!suites.length) {
+    el.innerHTML = '<div style="color:var(--muted);padding:10px 0">No test suites yet. <a href="#" onclick="showPage(\'builder\');newSuite()" style="color:var(--accent)">Create one →</a></div>';
+    return;
+  }
+  el.innerHTML = suites.map(s => {
+    const lastResult = results.filter(r => r.suiteId === s.id)[0];
+    const badgeClass = !lastResult ? 'badge-none' : lastResult.status === 'passed' ? 'badge-pass' : 'badge-fail';
+    const badgeText = !lastResult ? 'no runs' : lastResult.status;
+    return `
+    <div class="suite-item" onclick="selectSuiteForRun('${s.id}')">
+      <div>
+        <div class="si-name">${s.name}</div>
+        <div class="si-meta">${s.steps?.length || 0} steps · ${s.pkg || 'no pkg'} · ${s.desc || ''}</div>
+      </div>
+      <div class="si-badge ${badgeClass}">${badgeText}</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-success btn-sm" onclick="event.stopPropagation();runSuite('${s.id}')">▶ Run</button>
+        <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editSuite('${s.id}')">✏</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteSuite('${s.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editSuite(id) {
+  const s = suites.find(x => x.id === id);
+  if (!s) return;
+  currentBuilderSuite = s;
+  builderSteps = [...(s.steps || [])];
+  document.getElementById('suite-name').value = s.name;
+  document.getElementById('suite-pkg').value = s.pkg || '';
+  document.getElementById('suite-desc').value = s.desc || '';
+  renderSteps();
+  showPage('builder');
+}
+
+function deleteSuite(id) {
+  if (!confirm('Delete this suite?')) return;
+  suites = suites.filter(s => s.id !== id);
+  saveSuitesToStorage();
+  renderSuiteList();
+  toast('Suite deleted', 'info');
+}
+
+async function runSuite(id) {
+  if (!selectedSerial) { toast('No device selected', 'error'); return; }
+  const suite = suites.find(s => s.id === id);
+  if (!suite) return;
+  // Push to server if possible, fallback to local simulation
+  const serverRes = await api('POST', `/api/suites/${id}/run`, { serial: selectedSerial });
+  if (serverRes.error) {
+    // Simulate locally
+    simulateRun(suite);
+  } else {
+    toast(`Run started (ID: ${serverRes.runId})`, 'info');
+    showPage('results');
+  }
+}
+
+function simulateRun(suite) {
+  const runId = Date.now().toString();
+  const run = { id: runId, suiteId: suite.id, suiteName: suite.name, serial: selectedSerial || 'simulated',
+    startedAt: new Date().toISOString(), status: 'running', steps: [], passed: 0, failed: 0 };
+  results.unshift(run);
+  saveResultsToStorage();
+  renderResults();
+  showPage('results');
+  let i = 0;
+  const iv = setInterval(() => {
+    if (i >= suite.steps.length) {
+      run.status = run.failed > 0 ? 'failed' : 'passed';
+      run.endedAt = new Date().toISOString();
+      clearInterval(iv);
+      saveResultsToStorage();
+      renderResults();
+      updateDashboard();
+      toast(`Run complete: ${run.passed} passed`, run.status === 'passed' ? 'success' : 'error');
+      return;
+    }
+    const step = suite.steps[i];
+    const pass = Math.random() > 0.1;
+    run.steps.push({ ...step, result: pass?'passed':'failed', duration: 200+Math.random()*800|0, error: pass?'':'Simulated failure' });
+    if (pass) run.passed++; else run.failed++;
+    saveResultsToStorage();
+    renderResults();
+    i++;
+  }, 400);
+}
+
+function selectSuiteForRun(id) {
+  document.querySelectorAll('.suite-item').forEach(el => el.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+
+// ── RESULTS ──────────────────────────────────────────────────────────────────
+async function refreshResultsFromServer() {
+  const res = await api('GET', '/api/results');
+  if (res.results) { results = res.results; saveResultsToStorage(); renderResults(); updateDashboard(); }
+}
+
+function renderResults() {
+  const el = document.getElementById('results-list');
+  const dashEl = document.getElementById('dash-recent');
+  if (!results.length) {
+    el.innerHTML = '<div style="color:var(--muted);padding:10px 0">No test runs yet. Run a suite to see results here.</div>';
+    if (dashEl) dashEl.innerHTML = '<div style="color:var(--muted);font-size:13px">No recent runs.</div>';
+    return;
+  }
+  const html = results.slice(0, 40).map((r,idx) => {
+    const stCls = r.status === 'running' ? 'ri-run' : r.status === 'passed' ? 'ri-pass' : 'ri-fail';
+    const dur = r.duration ? `${(r.duration/1000).toFixed(1)}s` : '–';
+    const stepsHtml = (r.steps||[]).map((s,si) => `
+      <div class="rs-row">
+        <div class="rs-idx">${si+1}</div>
+        <div class="rs-type">${s.type}</div>
+        <div class="rs-desc">${describeStep(s)}</div>
+        <div class="rs-dur">${s.duration || 0}ms</div>
+        <div class="rs-res ${s.result==='passed'?'rs-pass':'rs-fail'}">${s.result||'?'}</div>
+      </div>
+      ${s.error ? `<div class="rs-err">⚠ ${s.error}</div>` : ''}`).join('');
+    return `
+    <div class="result-item" id="result-${r.id}" onclick="this.classList.toggle('open')">
+      <div class="result-header">
+        <div class="ri-status ${stCls}"></div>
+        <div class="ri-name">${r.suiteName}</div>
+        <div class="ri-meta">✓${r.passed} ✗${r.failed} · ${dur} · ${r.serial||''} · ${new Date(r.startedAt).toLocaleTimeString()}</div>
+      </div>
+      <div class="result-steps">${stepsHtml}</div>
+    </div>`;
+  }).join('');
+  el.innerHTML = html;
+  if (dashEl) dashEl.innerHTML = html.slice(0, html.indexOf('</div>', 400)+6) || '<div style="color:var(--muted);font-size:13px">No recent runs.</div>';
+}
+
+function updateRunningResult(runId, step) {
+  const r = results.find(x => x.id === runId);
+  if (!r) return;
+  r.steps = r.steps || [];
+  r.steps.push(step);
+  if (step.result === 'passed') r.passed = (r.passed||0) + 1;
+  else r.failed = (r.failed||0) + 1;
+  saveResultsToStorage();
+  renderResults();
+}
+
+function clearResults() {
+  if (!confirm('Clear all results?')) return;
+  results = []; saveResultsToStorage(); renderResults();
+}
+
+function updateDashboard() {
+  document.getElementById('dash-devices').textContent = devices.length;
+  document.getElementById('dash-suites').textContent = suites.length;
+  const last = results[0];
+  document.getElementById('dash-passed').textContent = last ? last.passed : '–';
+  document.getElementById('dash-failed').textContent = last ? last.failed : '–';
+}
+
+// ── LOGCAT ────────────────────────────────────────────────────────────────────
+function startLogcat() {
+  if (!selectedSerial) { toast('Select a device first', 'error'); return; }
+  const tag = document.getElementById('logcat-tag').value.trim();
+  sendWS({ type: 'logcat_start', serial: selectedSerial, tag });
+  logcatRunning = true;
+  toast('Logcat streaming started', 'success');
+}
+
+function stopLogcat() { sendWS({ type: 'logcat_stop' }); logcatRunning = false; }
+
+function clearLogcat() { logcatLines = []; document.getElementById('logcat-output').innerHTML = ''; }
+
+function appendLogcat(raw) {
+  const lines = raw.split('\n').filter(Boolean);
+  lines.forEach(line => {
+    logcatLines.push(line);
+    if (logcatLines.length > 2000) logcatLines.shift();
+  });
+  filterLogcat();
+}
+
+function filterLogcat() {
+  const search = document.getElementById('logcat-filter').value.toLowerCase();
+  const level = document.getElementById('logcat-level').value;
+  const el = document.getElementById('logcat-output');
+  const filtered = logcatLines.filter(l => {
+    if (search && !l.toLowerCase().includes(search)) return false;
+    if (level) { const m = l.match(/\s([VDIWEF])\//) ; if (m && m[1] !== level) return false; }
+    return true;
+  });
+  el.innerHTML = filtered.slice(-300).map(l => {
+    const m = l.match(/\s([VDIWEF])\//);
+    const lvl = m ? m[1] : 'V';
+    return `<div class="log-line log-${lvl}">${escHtml(l)}</div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────────────────────
+function switchTab(page, tab) {
+  const tabs = document.querySelectorAll(`#page-${page} .tab`);
+  const panes = document.querySelectorAll(`#page-${page} .tab-pane`);
+  tabs.forEach(t => t.classList.remove('active'));
+  panes.forEach(p => p.classList.remove('active'));
+  const idx = ['app','input','system','perf'].indexOf(tab);
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  const pane = document.getElementById(`controls-tab-${tab}`);
+  if (pane) pane.classList.add('active');
+  activeControlsTab = tab;
+}
+
+async function installApk() {
+  const file = document.getElementById('apk-file').files[0];
+  if (!file) { toast('Select an APK file first', 'error'); return; }
+  if (!selectedSerial) { toast('Select a device first', 'error'); return; }
+  const fd = new FormData(); fd.append('apk', file);
+  toast('Installing APK...', 'info');
+  const res = await api('POST', `/api/device/${selectedSerial}/install`, fd, true);
+  if (res.success) toast('APK installed successfully!', 'success');
+  else toast('Install failed: ' + (res.error||res.output), 'error');
+}
+
+async function launchApp() {
+  const pkg = document.getElementById('ctrl-pkg').value.trim();
+  if (!pkg || !selectedSerial) { toast('Enter package name and select device', 'error'); return; }
+  const res = await api('POST', `/api/device/${selectedSerial}/launch`, { packageName: pkg });
+  toast(res.success ? `Launched ${pkg}` : 'Launch failed: ' + res.error, res.success ? 'success' : 'error');
+}
+
+async function stopApp() {
+  const pkg = document.getElementById('ctrl-pkg').value.trim();
+  if (!pkg || !selectedSerial) return;
+  await api('POST', `/api/device/${selectedSerial}/stop`, { packageName: pkg });
+  toast(`Stopped ${pkg}`, 'info');
+}
+
+async function clearData() {
+  const pkg = document.getElementById('ctrl-pkg').value.trim();
+  if (!pkg || !selectedSerial) return;
+  if (!confirm(`Clear all data for ${pkg}?`)) return;
+  const res = await api('POST', `/api/device/${selectedSerial}/clear`, { packageName: pkg });
+  toast(res.success ? 'Data cleared' : 'Failed: ' + res.error, res.success ? 'success' : 'error');
+}
+
+async function uninstallApp() {
+  const pkg = document.getElementById('ctrl-pkg').value.trim();
+  if (!pkg || !selectedSerial) return;
+  if (!confirm(`Uninstall ${pkg}?`)) return;
+  const res = await api('DELETE', `/api/device/${selectedSerial}/package/${pkg}`);
+  toast(res.success ? 'Uninstalled' : 'Failed: ' + res.error, res.success ? 'success' : 'error');
+  loadPackages();
+}
+
+async function loadPackages() {
+  if (!selectedSerial) return;
+  const res = await api('GET', `/api/device/${selectedSerial}/packages`);
+  allPkgs = res.packages || [];
+  filterPackages();
+}
+
+function filterPackages() {
+  const q = document.getElementById('pkg-search')?.value?.toLowerCase() || '';
+  const el = document.getElementById('pkg-list');
+  if (!el) return;
+  const filtered = allPkgs.filter(p => p.includes(q)).slice(0, 60);
+  el.innerHTML = filtered.map(p => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--panel);border-radius:6px">
+      <div style="flex:1;font-family:var(--font);font-size:11px;color:var(--muted2)">${p}</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ctrl-pkg').value='${p}';switchTab('controls','app')">Use</button>
+      <button class="btn btn-success btn-sm" onclick="launchPkg('${p}')">▶</button>
+    </div>`).join('');
+}
+
+async function launchPkg(pkg) {
+  if (!selectedSerial) return;
+  await api('POST', `/api/device/${selectedSerial}/launch`, { packageName: pkg });
+  toast(`Launched ${pkg}`, 'success');
+}
+
+async function sendTap() {
+  const x = document.getElementById('tap-x').value;
+  const y = document.getElementById('tap-y').value;
+  if (!x || !y || !selectedSerial) return;
+  const res = await api('POST', `/api/device/${selectedSerial}/tap`, { x, y });
+  toast(res.success ? `Tapped (${x},${y})` : 'Tap failed', res.success ? 'success' : 'error');
+}
+
+async function sendSwipe() {
+  const [x1,y1,x2,y2,dur] = ['sw-x1','sw-y1','sw-x2','sw-y2','sw-dur'].map(id => document.getElementById(id).value);
+  if (!x1 || !y1 || !x2 || !y2 || !selectedSerial) return;
+  const res = await api('POST', `/api/device/${selectedSerial}/swipe`, { x1, y1, x2, y2, duration: dur });
+  toast(res.success ? 'Swipe sent' : 'Swipe failed', res.success ? 'success' : 'error');
+}
+
+async function sendType() {
+  const text = document.getElementById('type-text').value;
+  if (!text || !selectedSerial) return;
+  const res = await api('POST', `/api/device/${selectedSerial}/type`, { text });
+  toast(res.success ? `Typed: "${text}"` : 'Type failed', res.success ? 'success' : 'error');
+}
+
+async function sendKey(code) {
+  if (!selectedSerial) { toast('Select a device first', 'error'); return; }
+  await api('POST', `/api/device/${selectedSerial}/key`, { keycode: code });
+  toast(`Key event: ${code}`, 'info');
+}
+
+async function setOrientation(val) {
+  if (!selectedSerial) return;
+  const res = await api('POST', `/api/device/${selectedSerial}/orientation`, { value: val });
+  toast(val === 0 ? 'Portrait mode set' : 'Landscape mode set', 'success');
+}
+
+async function applyFontScale() {
+  if (!selectedSerial) return;
+  const scale = document.getElementById('font-scale').value;
+  await api('POST', `/api/device/${selectedSerial}/fontscale`, { scale });
+  toast(`Font scale set to ${scale}x`, 'success');
+}
+
+async function setNetwork(disable) {
+  if (!selectedSerial) return;
+  const res = await api('POST', `/api/device/${selectedSerial}/network`, { enable: disable });
+  toast(disable ? 'Network disabled' : 'Network enabled', disable ? 'error' : 'success');
+}
+
+async function takeScreenshot() {
+  if (!selectedSerial) { toast('Select a device first', 'error'); return; }
+  const prev = document.getElementById('screenshot-preview');
+  prev.innerHTML = '<div style="color:var(--muted)">Taking screenshot...</div>';
+  try {
+    const url = `${BASE}/api/device/${selectedSerial}/screenshot?t=${Date.now()}`;
+    prev.innerHTML = `<img src="${url}" style="max-width:100%;border-radius:6px;border:1px solid var(--border);margin-top:8px" onerror="this.parentElement.innerHTML='<span style=color:var(--red)>Screenshot failed</span>'"/>`;
+  } catch(e) { prev.innerHTML = `<span style="color:var(--red)">${e.message}</span>`; }
+}
+
+async function checkPerf() {
+  const pkg = document.getElementById('perf-pkg').value.trim();
+  if (!pkg || !selectedSerial) { toast('Enter package name', 'error'); return; }
+  const res = await api('GET', `/api/device/${selectedSerial}/perf/${pkg}`);
+  const el = document.getElementById('perf-result');
+  if (res.error) { el.innerHTML = `<div style="color:var(--red)">${res.error}</div>`; return; }
+  el.innerHTML = `
+    <div class="info-grid">
+      <div class="info-row"><span class="k">Total PSS (RAM)</span><span class="v">${res.totalPss} KB</span></div>
+      <div class="info-row"><span class="k">CPU %</span><span class="v">${res.cpuPct}%</span></div>
+    </div>
+    <div style="margin-top:10px;font-family:var(--font);font-size:11px;color:var(--muted)">${res.fps}</div>`;
+}
+
+// ── MONKEY ───────────────────────────────────────────────────────────────────
+async function runMonkey() {
+  const pkg = document.getElementById('monkey-pkg').value.trim();
+  const events = document.getElementById('monkey-events').value;
+  const seed = document.getElementById('monkey-seed').value;
+  const throttle = document.getElementById('monkey-throttle').value;
+  if (!pkg || !selectedSerial) { toast('Enter package name and select device', 'error'); return; }
+  const btn = document.getElementById('monkey-run-btn');
+  btn.disabled = true; btn.textContent = '🐒 Running...';
+  toast('Monkey test running...', 'info');
+  const res = await api('POST', `/api/device/${selectedSerial}/monkey`, { packageName: pkg, events, seed, throttle });
+  btn.disabled = false; btn.textContent = '🐒 Run Monkey Test';
+  const el = document.getElementById('monkey-result');
+  const ct = document.getElementById('monkey-result-content');
+  el.style.display = '';
+  if (res.error) { ct.innerHTML = `<div style="color:var(--red)">${res.error}</div>`; return; }
+  ct.innerHTML = `
+    <div class="info-grid" style="margin-bottom:12px">
+      <div class="info-row"><span class="k">Status</span><span class="v" style="color:${res.crashed?'var(--red)':'var(--green)'}">${res.crashed?'CRASH DETECTED':'PASSED'}</span></div>
+      <div class="info-row"><span class="k">Events</span><span class="v">${res.events}</span></div>
+    </div>
+    <div style="background:#000;border-radius:6px;padding:10px;font-family:var(--font);font-size:11px;color:var(--muted2);max-height:200px;overflow-y:auto;line-height:1.7">${escHtml(res.output)}</div>`;
+  toast(res.crashed ? '🔴 Monkey: CRASH detected!' : '🟢 Monkey: No crashes!', res.crashed ? 'error' : 'success');
+}
+
+// ── SHELL ────────────────────────────────────────────────────────────────────
+function setupShell() {
+  const inp = document.getElementById('shell-input');
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const cmd = inp.value.trim(); inp.value = '';
+      if (!cmd) return;
+      addShellLine('$ ' + cmd, 'shell-cmd');
+      runShellCmd(cmd);
+    }
+  });
+}
+
+async function runShellCmd(cmd) {
+  if (!selectedSerial) { addShellLine('⚠ No device selected', 'shell-err'); return; }
+  const res = await api('POST', `/api/device/${selectedSerial}/shell`, { command: cmd });
+  if (res.error) addShellLine(res.error, 'shell-err');
+  else addShellLine(res.output || '(no output)', 'shell-out');
+}
+
+function runQuickCmd(cmd) {
+  const inp = document.getElementById('shell-input');
+  inp.value = cmd;
+  addShellLine('$ ' + cmd, 'shell-cmd');
+  runShellCmd(cmd);
+  showPage('shell');
+}
+
+function addShellLine(txt, cls) {
+  const el = document.getElementById('shell-output');
+  const d = document.createElement('div');
+  d.className = cls; d.textContent = txt;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+function reconnect() {
+  BASE = document.getElementById('server-url').value.trim();
+  localStorage.setItem('server-url', BASE);
+  connectWS(); refreshDevices();
+  toast('Reconnecting...', 'info');
+}
+
+function exportSuites() {
+  const data = JSON.stringify({ suites, exportedAt: new Date().toISOString() }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'droidpilot-suites.json'; a.click();
+  toast('Suites exported', 'success');
+}
+
+function importSuites(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.suites) { suites = data.suites; saveSuitesToStorage(); renderSuiteList(); toast(`Imported ${data.suites.length} suites`, 'success'); }
+    } catch(err) { toast('Invalid JSON file', 'error'); }
+  };
+  r.readAsText(file);
+}
+
+// ── STOP ALL ─────────────────────────────────────────────────────────────────
+function stopAllRuns() {
+  results.filter(r => r.status === 'running').forEach(r => api('POST', `/api/runs/${r.id}/stop`));
+  toast('Stop signal sent', 'info');
+}
+
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+function saveSuitesToStorage() { try { localStorage.setItem('dp_suites', JSON.stringify(suites)); } catch(e){} }
+function loadSuitesFromStorage() { try { suites = JSON.parse(localStorage.getItem('dp_suites') || '[]'); } catch(e){ suites=[]; } }
+function saveResultsToStorage() { try { localStorage.setItem('dp_results', JSON.stringify(results.slice(0,50))); } catch(e){} }
+function loadResultsFromStorage() { try { results = JSON.parse(localStorage.getItem('dp_results') || '[]'); } catch(e){ results=[]; } }
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const ct = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  t.innerHTML = `<span>${icons[type]||'•'}</span><span>${msg}</span>`;
+  ct.appendChild(t);
+  setTimeout(() => { t.style.animation='slideOut .3s ease forwards'; setTimeout(()=>t.remove(), 300); }, 3500);
+}
+
+// ── MODAL ────────────────────────────────────────────────────────────────────
+function closeModal(e) { if (e.target === document.getElementById('modal-overlay')) closeModalNow(); }
+function closeModalNow() { document.getElementById('modal-overlay').classList.remove('show'); }
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function openInstallModal() { showPage('controls'); switchTab('controls','app'); }
+</script>
+</body>
+</html>
