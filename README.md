@@ -1,4 +1,4 @@
-# 🤖 DroidPilot — Android Test Automation Platform
+# DroidPilot — Android Test Automation Platform
 
 A fully customisable web-based Android test automation tool powered by ADB.
 
